@@ -32,7 +32,7 @@ HIDDEN = 32
 LAMBDA_RECON = 5.0
 TEST_ANOMALY_RATIO = 0.30
 NODE_ANOMALY_RATIO = 0.03
-VOTES_PER_SOURCE = 16            # injection volontairement visible
+VOTES_PER_SOURCE = 16            
 THRESHOLD_STD = 2.0               # seuil sur validation normale uniquement
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
