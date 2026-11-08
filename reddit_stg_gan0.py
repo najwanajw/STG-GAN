@@ -26,7 +26,7 @@ from torch_geometric.data import Data
 from torch_geometric_temporal.nn.recurrent import GConvGRU
 from sklearn.metrics import roc_auc_score, average_precision_score, confusion_matrix, precision_recall_fscore_support
 
-DATA_PATH = r'C:\Users\HP\mon-projet\dataset\soc-redditHyperlinks-body.tsv'
+DATA_PATH =  r'path\to\dataset\soc-redditHyperlinks-body.tsv' # Update this path according to the dataset location on your computer.
 NUM_SNAPSHOTS = 120             # bins temporels de durée égale ; ajuster selon le fichier
 SEEDS = range(42, 47)
 EPOCHS = 100
