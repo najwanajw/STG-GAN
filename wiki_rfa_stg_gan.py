@@ -22,7 +22,7 @@ from torch_geometric_temporal.nn.recurrent import GConvGRU
 from sklearn.metrics import (roc_auc_score, average_precision_score,
                              confusion_matrix, precision_recall_fscore_support)
 
-DATA_PATH = r'C:\Users\HP\mon-projet\dataset\wiki-RfA.txt'
+DATA_PATH =  r'path\to\dataset\wiki-RfA.txt'  # Update this path according to the dataset location on your computer.
 NUM_SNAPSHOTS = 120
 SEQ_LEN = 4
 SEEDS = range(42, 47)
