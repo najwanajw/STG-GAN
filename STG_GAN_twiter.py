@@ -1,13 +1,3 @@
-"""Twitter Tennis STG-GAN: 50% des fenêtres d'entraînement, cinq graines.
-Dependencies: torch, torch-geometric, torch-geometric-temporal, scikit-learn, numpy.
-
-v2 :
-  - correction de protocole : l'injection de test est tirée une seule fois
-    (seed fixe), hors boucle des seeds d'entraînement ;
-  - seuil calibré par F1 sur une validation augmentée d'anomalies injectées
-    (Solution 2), au lieu de mean + 2*std ;
-  - régularisation légère : weight_decay + dropout (Solution 3).
-"""
 import copy
 import random
 import time
@@ -30,15 +20,15 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 SEQ_LEN, HIDDEN, LAMBDA_RECON = 4, 32, 5.0
 TEST_RATIO, NODE_RATIO = 0.30, 0.03
 
-# --- Solution 3 : régularisation légère ---------------------------------
+# --- Solution 3: Light regularization -----------------------------------
 WEIGHT_DECAY = 1e-4
 DROPOUT = 0.15
 
-# --- Solution 2 : seuil F1-calibré sur validation augmentée -------------
+# --- Solution 2: Threshold calibrated using F1 on the augmented validation set ---
 VAL_ANOMALY_RATIO = 0.30
 VAL_CALIB_SEED_OFFSET = 5000
 
-# --- Correction de protocole : injection de test fixe --------------------
+# --- Protocol correction: Fixed anomaly injection in the test set ---
 TEST_INJECTION_SEED = 2026
 
 
