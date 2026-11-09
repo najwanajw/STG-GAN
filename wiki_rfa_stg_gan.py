@@ -1,12 +1,3 @@
-"""STG-GAN sur Wiki-RfA avec injection de votes hybrides visibles.
-
-Spyder : adapter DATA_PATH puis %runfile wiki_rfa_stggan_hybrid.py --wdir
-Dépendances : numpy, pandas, torch, torch-geometric,
-torch-geometric-temporal, scikit-learn.
-
-Les étiquettes sont synthétiques. Une fenêtre est positive si elle reçoit
-des votes injectés. Ce protocole ne mesure pas des anomalies réelles de RfA.
-"""
 import copy
 import random
 import time
@@ -33,7 +24,7 @@ LAMBDA_RECON = 5.0
 TEST_ANOMALY_RATIO = 0.30
 NODE_ANOMALY_RATIO = 0.03
 VOTES_PER_SOURCE = 16            
-THRESHOLD_STD = 2.0               # seuil sur validation normale uniquement
+THRESHOLD_STD = 2.0              
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
