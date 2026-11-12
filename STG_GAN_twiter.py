@@ -57,7 +57,7 @@ class Discriminator(nn.Module):
         super().__init__()
         self.gat1 = GATConv(dim, 16, heads=2)
         self.gat2 = GATConv(32, 32)
-        # --- Solution 3 : dropout léger après chaque couche GAT ---
+       # --- Solution 3: Light dropout after each GAT layer ---
         self.drop1 = nn.Dropout(DROPOUT)
         self.drop2 = nn.Dropout(DROPOUT)
         layer = nn.TransformerEncoderLayer(32, 2, batch_first=True, dropout=DROPOUT)
@@ -174,8 +174,10 @@ def explanation(d, seq, true_nodes):
     return hits, hit_rates
 
 def calibrate_threshold(g, val_seqs, seed):
-    """Solution 2 : seuil qui maximise le F1 sur une validation augmentée
-    d'anomalies injectées (seed différente de celle du test)."""
+   """Solution 2: Select the threshold that maximizes the F1 score on the
+validation set augmented with injected anomalies. Use a different seed
+for validation anomaly injection than for test anomaly injection.
+"""
     val_eval, val_labels, _ = make_test(val_seqs, seed=seed + VAL_CALIB_SEED_OFFSET, ratio=VAL_ANOMALY_RATIO)
     val_scores = np.array([score(g, seq) for seq in val_eval])
     candidates = np.unique(val_scores)
