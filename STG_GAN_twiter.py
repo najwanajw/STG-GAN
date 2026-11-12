@@ -90,7 +90,7 @@ def generated(generator, prepared):
 def train(train_seqs, dim, adversarial):
     g = Generator(dim).to(DEVICE)
     d = Discriminator(dim).to(DEVICE) if adversarial else None
-    # --- Solution 3 : weight_decay sur les deux optimiseurs ---
+   # --- Solution 3: Apply weight_decay to both optimizers ---
     opt_g = Adam(g.parameters(), lr=1e-3, weight_decay=WEIGHT_DECAY)
     opt_d = Adam(d.parameters(), lr=1e-3, weight_decay=WEIGHT_DECAY) if d else None
     for epoch in range(EPOCHS):
@@ -226,8 +226,7 @@ def main():
     if not train_seqs or not val_seqs or len(test_seqs) < 4:
         raise ValueError('Too few temporal windows for training, validation, or test.')
     print(f'Device={DEVICE}; snapshots train/val/test={len(train_snapshots)}/{len(val)}/{len(test)}; training windows={len(train_seqs)}/{len(all_train)}')
-    # Correction de protocole : injection de test fixée UNE SEULE FOIS, hors
-    # boucle des seeds.
+   # Protocol correction: Fix the test-set anomaly injection once, outside the seed loop.
     evaluation, labels, nodes = make_test(test_seqs, seed=TEST_INJECTION_SEED)
     main_results, ablations = [], []
     for seed in SEEDS:
