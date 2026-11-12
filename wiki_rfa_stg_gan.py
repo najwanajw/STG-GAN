@@ -37,7 +37,7 @@ def seed_all(seed):
 
 
 def read_votes(path):
-    """Chaque bloc commence par SRC; TXT et les autres champs sont ignorés."""
+    """Each block starts with SRC. TXT and the other fields are ignored."""
     rows, current = [], {}
 
     def flush():
@@ -60,7 +60,7 @@ def read_votes(path):
     df = pd.DataFrame(rows, columns=['SRC', 'TGT', 'DAT', 'VOT'])
     if df.empty:
         raise ValueError('Aucun bloc SRC/TGT/DAT/VOT trouvé.')
-    # Wiki-RfA emploie principalement "HH:MM, DD Month YYYY".
+    # Wiki-RfA primarily uses the "HH:MM, DD Month YYYY" date format.
     dt = pd.to_datetime(df.DAT, format='%H:%M, %d %B %Y',
                         errors='coerce', utc=True)
     missing = dt.isna() & df.DAT.ne('')
@@ -83,7 +83,7 @@ def read_votes(path):
 
 
 def features(edge_index, edge_vote, n):
-    """Six caractéristiques, toutes cohérentes avec les votes du graphe."""
+   """Six features, all consistent with the votes in the graph."""
     src, dst = edge_index.numpy()
     votes = edge_vote.numpy()
     x = np.zeros((n, 6), dtype=np.float32)
@@ -219,14 +219,14 @@ def train(seqs, dim):
 
 
 def inject(sequence, normalizer):
-    """Même groupe source si présent; campagne de votes négatifs par snapshot."""
+    """Reuse the same source group if present and generate a negative-vote campaign for each snapshot."""
     common = set(sequence[0].node_ids.tolist())
     for snapshot in sequence[1:]:
         common.intersection_update(snapshot.node_ids.tolist())
     pool = sorted(common)
     if len(pool) < 3:
         raise ValueError('Pas assez d’utilisateurs communs dans cette fenêtre.')
-    # Écarter une cible du groupe de votants; les deux côtés sont marqués.
+    # Exclude one target from the voter group and label both sides.
     n_source = min(len(pool) - 1,
                    max(1, round(NODE_ANOMALY_RATIO * min(len(s.x) for s in sequence))))
     picked = random.sample(pool, n_source + 1)
@@ -253,7 +253,7 @@ def inject(sequence, normalizer):
 
 
 def make_test(seqs, normalizer, seed):
-    # Les fenêtres se chevauchent, mais chaque séquence est évaluée séparément.
+    # Windows overlap, but each sequence is evaluated independently.
     eligible = []
     for i, seq in enumerate(seqs):
         common = set(seq[0].node_ids.tolist())
@@ -282,7 +282,6 @@ def score(g, seq):
 
 
 def explain(d, seq, truth):
-    """Attention incidente; mesure de localisation, pas preuve causale."""
     with torch.no_grad():
         _, weights = d([prep(s) for s in seq], attention=True)
     precision, hit = [], []
@@ -348,7 +347,7 @@ def main():
     print(f'Device={DEVICE}; snapshots train/val/test='
           f'{len(train_graphs)}/{len(val)}/{len(test)}; '
           f'fenêtres entraînées={len(train_seqs)}/{len(all_train)}')
-    # Une injection fixe pour comparer des graines d'entraînement distinctes.
+    # Use the same anomaly injection across runs with different training seeds.
     evaluation, labels, truth = make_test(test_seqs, normalizer, seed=2026)
     results = []
     for seed in SEEDS:
