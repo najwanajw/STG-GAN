@@ -42,7 +42,8 @@ def seed_all(seed):
 
 
 def load_graphs(path):
-    # Sep=None reconnaît le TSV Reddit et un éventuel CSV ; PROPERTIES reste une chaîne.
+   # sep=None detects the delimiter for the Reddit TSV file.
+# PROPERTIES remains a string.
     df = pd.read_csv(path, sep=None, engine='python', usecols=lambda c: c.upper() in
                      {'SOURCE_SUBREDDIT', 'TARGET_SUBREDDIT', 'TIMESTAMP', 'LINK_SENTIMENT', 'PROPERTIES'})
     df.columns = df.columns.str.upper()
@@ -52,7 +53,7 @@ def load_graphs(path):
     df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], errors='coerce', utc=True)
     df = df.dropna(subset=['TIMESTAMP', 'SOURCE_SUBREDDIT', 'TARGET_SUBREDDIT']).sort_values('TIMESTAMP').reset_index(drop=True)
     if df.empty: raise ValueError('Aucun lien daté valide.')
-    # Le contenu textuel des posts et leurs IDs ne servent pas de labels.
+    # Post text and post IDs are not used as labels.
     nodes = pd.Index(pd.unique(pd.concat([df.SOURCE_SUBREDDIT, df.TARGET_SUBREDDIT], ignore_index=True)))
     node_ids = pd.Series(np.arange(len(nodes), dtype=np.int64), index=nodes)
     df['src'] = node_ids.loc[df.SOURCE_SUBREDDIT].to_numpy()
@@ -60,9 +61,9 @@ def load_graphs(path):
     duration = max((df.TIMESTAMP.max() - df.TIMESTAMP.min()).total_seconds(), 1.0)
     offsets = (df.TIMESTAMP - df.TIMESTAMP.min()).dt.total_seconds().to_numpy()
     df['bin'] = np.minimum((offsets / duration * NUM_SNAPSHOTS).astype(int), NUM_SNAPSHOTS - 1)
-    # Définition des features sur les liens ; agrégation par nœud actif et par date.
+    # Define edge features and aggregate them by active node and date.
     sentiment = pd.to_numeric(df.get('LINK_SENTIMENT', pd.Series(0, index=df.index)), errors='coerce').fillna(0).to_numpy(np.float32)
-    # PROPERTIES : seulement les quatre premières valeurs numériques ; pas de dépendance aux labels.
+   # Use only the first four numeric values in PROPERTIES, without using labels.
     prop = np.zeros((len(df), 4), dtype=np.float32)
     if 'PROPERTIES' in df:
         for i, value in enumerate(df.PROPERTIES.fillna('').astype(str)):
@@ -108,7 +109,7 @@ class Generator(nn.Module):
         self.decoder = nn.Linear(HIDDEN, dim)
 
     def forward(self, sequence):
-        # L'état caché est remappé par identifiant global pour chaque snapshot.
+       # Remap the hidden state by global node ID for each snapshot.
         prev_ids = prev_h = None
         fake, losses = [], []
         for x, edges, batch, ids in sequence:
@@ -233,9 +234,10 @@ def score(g, seq):
 
 
 def calibrate_threshold(g, val_seqs, seed):
-    """Solution 2 : seuil qui maximise le F1 sur une validation augmentée
-    d'anomalies injectées (même protocole que le test, seed différente pour
-    ne jamais réutiliser les mêmes fenêtres/anomalies que le test)."""
+   """Solution 2: Select the threshold that maximizes F1 on the validation set
+augmented with injected anomalies. Use the same injection protocol as for
+the test set, with a different seed. Keep validation and test windows disjoint.
+"""
     val_eval, val_labels, _ = make_test(
         val_seqs, seed=seed + VAL_CALIB_SEED_OFFSET, ratio=VAL_ANOMALY_RATIO)
     val_scores = np.array([score(g, seq) for seq in val_eval])
