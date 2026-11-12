@@ -19,10 +19,14 @@ This repository provides the implementation of STG-GAN associated with the manus
 - NumPy
 - pandas
 - scikit-learn
+  
+## Datasets
 
+- Twitter-Tennis is loaded through PyTorch Geometric Temporal.
+- Reddit-Body and Wiki-RfA are available in the shared Google Drive folder:
+  https://drive.google.com/drive/folders/1_ZEbWoVZVUi8O5bWCR49U6AX2MrGx56E?usp=sharing
+Before running the Reddit-Body and Wiki-RfA scripts, set DATA_PATH in each script to the path of its downloaded dataset file.
 ## Usage
-
-The datasets are not included in this repository and must be downloaded separately from their original sources.
 
 Before running the Reddit and Wiki-RfA scripts, update DATA_PATH according to the dataset location on your computer.
 
