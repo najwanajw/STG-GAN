@@ -1,17 +1,3 @@
-"""STG-GAN pour Reddit Hyperlinks (liens datés entre subreddits).
-Exécution Spyder : adapter DATA_PATH, puis %runfile reddit_stggan_v2.py --wdir
-Dépendances : pandas, numpy, torch, torch-geometric, torch-geometric-temporal, scikit-learn.
-Les labels d'évaluation sont synthétiques (injection hybride), pas LINK_SENTIMENT.
-
-v2 :
-  - correction de protocole : l'injection de test est désormais tirée une
-    seule fois (seed fixe), hors boucle des seeds d'entraînement, pour ne
-    pas mélanger variance du modèle et variance de l'injection ;
-  - seuil calibré par F1 sur une validation augmentée d'anomalies
-    injectées (Solution 2), au lieu de mean + 2*std ;
-  - régularisation légère : weight_decay + dropout (Solution 3), pour
-    stabiliser la convergence (cf. seed 45 qui explosait en temps de calcul).
-"""
 import copy
 import random
 import time
@@ -27,7 +13,7 @@ from torch_geometric_temporal.nn.recurrent import GConvGRU
 from sklearn.metrics import roc_auc_score, average_precision_score, confusion_matrix, precision_recall_fscore_support
 
 DATA_PATH =  r'path\to\dataset\soc-redditHyperlinks-body.tsv' # Update this path according to the dataset location on your computer.
-NUM_SNAPSHOTS = 120             # bins temporels de durée égale ; ajuster selon le fichier
+NUM_SNAPSHOTS = 120             
 SEEDS = range(42, 47)
 EPOCHS = 100
 TRAIN_FRACTION = 0.5
@@ -38,15 +24,15 @@ TEST_ANOMALY_RATIO = 0.30
 NODE_ANOMALY_RATIO = 0.03
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# --- Solution 3 : régularisation légère ---------------------------------
+# --- Solution 3: Light regularization -----------------------------------
 WEIGHT_DECAY = 1e-4
 DROPOUT = 0.15
 
-# --- Solution 2 : seuil F1-calibré sur validation augmentée -------------
+# --- Solution 2: Threshold calibrated using F1 on the augmented validation set ---
 VAL_ANOMALY_RATIO = 0.30
 VAL_CALIB_SEED_OFFSET = 5000
 
-# --- Correction de protocole : injection de test fixe --------------------
+# --- Protocol correction: Fixed anomaly injection in the test set ---
 TEST_INJECTION_SEED = 2026
 
 
@@ -83,7 +69,6 @@ def load_graphs(path):
             vals = np.fromstring(value, sep=',', dtype=np.float32)
             prop[i, :min(4, len(vals))] = vals[:4]
     prop[~np.isfinite(prop)] = 0
-    # Compression des très grands attributs, sans ajustement statistique sur le test.
     edge_features = np.column_stack((sentiment, np.sign(prop) * np.log1p(np.abs(prop))))
     graphs = []
     for _, part in df.groupby('bin', sort=True):
@@ -147,7 +132,7 @@ class AGD(nn.Module):
         super().__init__()
         self.gat1 = GATConv(dim, 16, heads=2)
         self.gat2 = GATConv(32, 32)
-        # --- Solution 3 : dropout léger après chaque couche GAT ---
+        # --- Solution 3: Light dropout after each GAT layer ---
         self.drop1 = nn.Dropout(DROPOUT)
         self.drop2 = nn.Dropout(DROPOUT)
         layer = nn.TransformerEncoderLayer(32, 2, batch_first=True, dropout=DROPOUT)
@@ -295,14 +280,14 @@ def main():
     val_seqs, test_seqs = windows(val), windows(test)
     if not train_seqs or not val_seqs or len(test_seqs) < 4:
         raise ValueError('Pas assez de fenêtres : ajuster NUM_SNAPSHOTS et SEQ_LEN.')
-    # Normalisation entraînement seulement, appliquée aux trois partitions.
+    # Fit the normalization on the training split only, then apply it to all three splits.
     train_values = torch.cat([s.x for s in train_graphs], dim=0)
     mean, std = train_values.mean(0), train_values.std(0).clamp_min(1e-6)
     for snapshot in graphs: snapshot.x = ((snapshot.x - mean) / std).clamp(-10, 10)
     print(f'Device={DEVICE}; train/val/test snapshots={len(train_graphs)}/{len(val)}/{len(test)}; training windows={len(train_seqs)}/{len(all_train)}')
-    # Correction de protocole : injection de test fixée UNE SEULE FOIS, hors
-    # boucle des seeds, pour ne pas mélanger variance du modèle et variance
-    # de l'injection entre les seeds.
+    # Protocol correction: Fix the test-set anomaly injection once outside the
+    # seed loop so that variation across seeds reflects the model rather than
+    # changes in the injected anomalies.
     evaluation, labels, marked = make_test(test_seqs, seed=TEST_INJECTION_SEED)
     results = []
     for seed in SEEDS:
